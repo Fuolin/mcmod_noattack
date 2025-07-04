@@ -1,0 +1,24 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="MIT"
+
+[[mods]]
+modId="noattack"
+version="${mod_version}"
+displayName="NoAttack Mod"
+authors="jinyi"
+description="Disables player attacks"
+
+[[dependencies.noattack]]
+modId="neoforge"
+mandatory=true
+versionRange="[21.1.169]"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.noattack]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.21.1]"
+ordering="NONE"
+side="BOTH"

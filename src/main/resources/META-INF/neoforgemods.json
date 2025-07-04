@@ -1,0 +1,12 @@
+{
+  "mods": [
+    {
+      "modId": "noattack",
+      "displayName": "NoAttack Mod",
+      "version": "1.0.0",
+      "entrypoints": {
+        "main": ["com.NoAttackMod.NoAttackMod"]
+      }
+    }
+  ]
+}
