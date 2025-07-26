@@ -15,21 +15,28 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Properties;
 
 @Mod(NoAttackMod.MODID)
 public class NoAttackMod {
     public static final String MODID = "noattack";
     private static ModConfigSpec.BooleanValue disableAttacksConfig;
-    private static ModConfigSpec configSpec;
-    private static boolean isAttackDisabled = true; // 默认值
+    private static Path configFilePath;
+    private static final Logger LOGGER = LogManager.getLogger(MODID);
 
     public NoAttackMod(IEventBus modEventBus, ModContainer container) {
         // 构建配置规范
         ModConfigSpec.Builder configBuilder = new ModConfigSpec.Builder();
         disableAttacksConfig = configBuilder
-                .comment("是否默认禁用玩家攻击")
+                .comment("Whether to disable player attacks by default")
                 .define("disableAttacks", true);
-        configSpec = configBuilder.build();
+        ModConfigSpec configSpec = configBuilder.build();
 
         // 注册配置
         container.registerConfig(ModConfig.Type.SERVER, configSpec);
@@ -41,10 +48,30 @@ public class NoAttackMod {
         NeoForge.EVENT_BUS.register(this);
     }
 
-    private void onConfigLoad(ModConfigEvent event) {
-        // 当配置加载完成后更新值
-        if (event.getConfig().getModId().equals(MODID)) {
-            isAttackDisabled = disableAttacksConfig.get();
+    private void onConfigLoad(ModConfigEvent.Loading event) {
+        if (event.getConfig().getType() == ModConfig.Type.SERVER &&
+                event.getConfig().getModId().equals(MODID)) {
+            ModConfig serverConfig = event.getConfig();
+            configFilePath = serverConfig.getFullPath();
+        }
+    }
+
+    private boolean isAttackDisabled() {
+        return disableAttacksConfig.get();
+    }
+
+    // 手动保存配置到文件
+    private void saveConfigToFile(boolean value) {
+        if (configFilePath == null) return;
+
+        Properties props = new Properties();
+        props.setProperty("disableAttacks", String.valueOf(value));
+
+        try {
+            Files.createDirectories(configFilePath.getParent());
+            props.store(Files.newOutputStream(configFilePath), "NoAttackMod Configuration");
+        } catch (IOException e) {
+            LOGGER.error("无法保存配置文件", e);
         }
     }
 
@@ -54,20 +81,26 @@ public class NoAttackMod {
                 .requires(source -> source.hasPermission(2))
                 .then(Commands.literal("on")
                         .executes(context -> {
-                            isAttackDisabled = true;
+                            // 保存配置到文件
+                            saveConfigToFile(true);
+                            // 重新加载配置
+                            disableAttacksConfig.set(true);
                             context.getSource().sendSuccess(() ->
                                     Component.literal("§a[NoAttack] 已禁止所有玩家攻击"), false);
                             return 1;
                         }))
                 .then(Commands.literal("off")
                         .executes(context -> {
-                            isAttackDisabled = false;
+                            // 保存配置到文件
+                            saveConfigToFile(false);
+                            // 重新加载配置
+                            disableAttacksConfig.set(false);
                             context.getSource().sendSuccess(() ->
                                     Component.literal("§a[NoAttack] 已允许所有玩家攻击"), false);
                             return 1;
                         }))
                 .executes(context -> {
-                    String status = isAttackDisabled ? "§4禁止" : "§2允许";
+                    String status = isAttackDisabled() ? "§4禁止" : "§2允许";
                     context.getSource().sendSuccess(
                             () -> Component.literal("§6[NoAttack] 当前攻击状态: " + status),
                             false
@@ -78,7 +111,7 @@ public class NoAttackMod {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onPlayerAttack(AttackEntityEvent event) {
-        if (!isAttackDisabled) {
+        if (!isAttackDisabled()) {
             return;
         }
         event.setCanceled(true);
@@ -86,7 +119,7 @@ public class NoAttackMod {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onKnockback(LivingKnockBackEvent event) {
-        if (!isAttackDisabled || !(event.getEntity().getLastAttacker() instanceof Player)) {
+        if (!isAttackDisabled() || !(event.getEntity().getLastAttacker() instanceof Player)) {
             return;
         }
         event.setCanceled(true);
