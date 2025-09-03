@@ -27,7 +27,7 @@ public class NoAttackMod {
         ModConfigSpec serverSpec = configBuilder.build(); // 构建 Spec
 
         // 注册配置
-        container.registerConfig(ModConfig.Type.SERVER, serverSpec);
+        container.registerConfig(ModConfig.Type.SERVER, serverSpec,"noattack.toml");
 
         // 注册NeoForge事件监听器
         NeoForge.EVENT_BUS.register(this);

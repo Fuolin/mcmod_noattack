@@ -18,12 +18,12 @@ public class Config {
         // 在配置文件中定义黑白名单
         whiteListConfig = builder
                 .comment("List of entity IDs that are allowed to be attacked (whitelist).",
-                        "Use the format “modid:entity_id”, e.g., “minecraft:ender_dragon”.")
+                        "Use the format \"modid:entity_id\", e.g., \"minecraft:ender_dragon\".")
                 .defineListAllowEmpty("whitelist", List.of(),() -> "modid:entity_id", obj -> obj instanceof String);
 
         blackListConfig = builder
                 .comment("List of entity IDs that are NOT allowed to be attacked (blacklist).",
-                        "Use the format “modid:entity_id”, e.g., “minecraft:ender_dragon”.")
+                        "Use the format \"modid:entity_id\", e.g., \"minecraft:ender_dragon\".")
                 .defineListAllowEmpty("blacklist", List.of(),() -> "modid:entity_id", obj -> obj instanceof String);
 
         WhiteOrBlack = builder
